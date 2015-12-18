@@ -114,6 +114,10 @@ public final class BriteDatabase implements Closeable {
     logging = enabled;
   }
 
+  public PublishSubject<Set<String>> getTriggersSubject() {
+    return triggers;
+  }
+
   private SQLiteDatabase getReadableDatabase() {
     SQLiteDatabase db = readableDatabase;
     if (db == null) {
