@@ -6,6 +6,9 @@ buildscript {
 
 apply plugin: 'com.android.library'
 apply from: rootProject.file('gradle/android-findbugs.gradle')
+apply plugin: 'com.github.dcendents.android-maven'
+
+group='com.github.Tractive'
 
 dependencies {
   compile rootProject.ext.rxJava
