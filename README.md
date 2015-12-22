@@ -1,3 +1,9 @@
+This is a fork of the official SQLBrite repository which includes an exposure of the database triggers as a convenience
+
+```java
+getTriggersSubject().onNext(Collections.singleton([table_name]))
+```
+
 SQLBrite
 ========
 
