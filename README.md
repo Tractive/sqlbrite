@@ -128,7 +128,7 @@ The `SqlBrite` object can also wrap a `ContentResolver` for observing a query on
 content provider.
 
 ```java
-BriteContentResolver resolver = sqlBrite.wrapContentProvider(contentResolver);
+BriteContentResolver resolver = sqlBrite.wrapContentProvider(contentResolver, Schedulers.io());
 Observable<Query> query = resolver.createQuery(/*...*/);
 ```
 
@@ -154,7 +154,7 @@ Download
 --------
 
 ```groovy
-compile 'com.squareup.sqlbrite:sqlbrite:0.6.0'
+compile 'com.squareup.sqlbrite:sqlbrite:0.6.3'
 ```
 
 Snapshots of the development version are available in [Sonatype's `snapshots` repository][snap].

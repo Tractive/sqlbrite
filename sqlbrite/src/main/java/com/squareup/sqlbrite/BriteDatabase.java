@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Scheduler;
+import rx.Subscriber;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
@@ -53,8 +54,6 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * the result of a query. Create using a {@link SqlBrite} instance.
  */
 public final class BriteDatabase implements Closeable {
-  private static final Set<String> INITIAL = Collections.emptySet();
-
   private final SQLiteOpenHelper helper;
   private final SqlBrite.Logger logger;
 
@@ -251,7 +250,7 @@ public final class BriteDatabase implements Closeable {
       @NonNull String... args) {
     Func1<Set<String>, Boolean> tableFilter = new Func1<Set<String>, Boolean>() {
       @Override public Boolean call(Set<String> triggers) {
-        return triggers == INITIAL || triggers.contains(table);
+        return triggers.contains(table);
       }
 
       @Override public String toString() {
@@ -272,9 +271,6 @@ public final class BriteDatabase implements Closeable {
       @NonNull String... args) {
     Func1<Set<String>, Boolean> tableFilter = new Func1<Set<String>, Boolean>() {
       @Override public Boolean call(Set<String> triggers) {
-        if (triggers == INITIAL) {
-          return true;
-        }
         for (String table : tables) {
           if (triggers.contains(table)) {
             return true;
@@ -309,8 +305,8 @@ public final class BriteDatabase implements Closeable {
 
         if (logging) {
           long tookMillis = NANOSECONDS.toMillis(nanoTime() - startNanos);
-          log("QUERY (%sms)\n  tables: %s\n  sql: %s\n  args: %s", tookMillis, tableFilter, sql,
-              Arrays.toString(args));
+          log("QUERY (%sms)\n  tables: %s\n  sql: %s\n  args: %s", tookMillis, tableFilter,
+              indentSql(sql), Arrays.toString(args));
         }
 
         return cursor;
@@ -321,16 +317,17 @@ public final class BriteDatabase implements Closeable {
       }
     };
 
-    Observable<Query> queryObservable = triggers //
-        .startWith(INITIAL) // Immediately trigger the query for initial value.
-        .observeOn(scheduler) //
+    final Observable<Query> queryObservable = triggers //
         .filter(tableFilter) // Only trigger on tables we care about.
         .map(new Func1<Set<String>, Query>() {
           @Override public Query call(Set<String> trigger) {
             return query;
           }
         }) //
-        .onBackpressureLatest() //
+        .onBackpressureLatest() // Guard against uncontrollable frequency of upstream emissions.
+        .startWith(query) //
+        .observeOn(scheduler) //
+        .onBackpressureLatest() // Guard against uncontrollable frequency of scheduler executions.
         .doOnSubscribe(new Action0() {
           @Override public void call() {
             if (transactions.get() != null) {
@@ -339,7 +336,12 @@ public final class BriteDatabase implements Closeable {
             }
           }
         });
-    return new QueryObservable(queryObservable);
+    // TODO switch to .extend when non-@Experimental
+    return new QueryObservable(new Observable.OnSubscribe<Query>() {
+      @Override public void call(Subscriber<? super Query> subscriber) {
+        queryObservable.unsafeSubscribe(subscriber);
+      }
+    });
   }
 
   /**
@@ -354,7 +356,7 @@ public final class BriteDatabase implements Closeable {
     long tookMillis = NANOSECONDS.toMillis(nanoTime() - startNanos);
 
     if (logging) {
-      log("QUERY (%sms)\n  sql: %s\n  args: %s", tookMillis, sql, Arrays.toString(args));
+      log("QUERY (%sms)\n  sql: %s\n  args: %s", tookMillis, indentSql(sql), Arrays.toString(args));
     }
 
     return cursor;
@@ -591,6 +593,10 @@ public final class BriteDatabase implements Closeable {
   })
   @Retention(SOURCE)
   public @interface ConflictAlgorithm {
+  }
+
+  private static String indentSql(String sql) {
+    return sql.replace("\n", "\n       ");
   }
 
   void log(String message, Object... args) {

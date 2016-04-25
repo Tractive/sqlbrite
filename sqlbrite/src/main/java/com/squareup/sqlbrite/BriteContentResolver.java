@@ -117,13 +117,20 @@ public final class BriteContentResolver {
             contentResolver.unregisterContentObserver(observer);
           }
         }));
+
+        subscriber.onNext(query); // Trigger initial query.
       }
     };
-    Observable<Query> queryObservable = Observable.create(subscribe) //
-        .startWith(query) //
+    final Observable<Query> queryObservable = Observable.create(subscribe) //
+        .onBackpressureLatest() // Guard against uncontrollable frequency of upstream emissions.
         .observeOn(scheduler) //
-        .onBackpressureLatest();
-    return new QueryObservable(queryObservable);
+        .onBackpressureLatest(); // Guard against uncontrollable frequency of scheduler executions.
+    // TODO switch to .extend when non-@Experimental
+    return new QueryObservable(new OnSubscribe<Query>() {
+      @Override public void call(Subscriber<? super Query> subscriber) {
+        queryObservable.unsafeSubscribe(subscriber);
+      }
+    });
   }
 
   void log(String message, Object... args) {

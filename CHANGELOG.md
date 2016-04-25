@@ -1,6 +1,29 @@
 Change Log
 =========
 
+Version 0.6.3 *(2016-04-13)*
+----------------------------
+
+ * `QueryObservable` constructor is now public allow instances to be created for tests.
+
+
+Version 0.6.2 *(2016-03-01)*
+----------------------------
+
+ * Fix: Document explicitly and correctly handle the fact that `Query.run()` can return `null` in
+   some situations. The `mapToOne`, `mapToOneOrDefault`, `mapToList`, and `asRows` helpers have all
+   been updated to handle this case and each is documented with their respective behavior.
+
+
+Version 0.6.1 *(2016-02-29)*
+----------------------------
+
+ * Fix: Apply backpressure strategy between database/content provider and the supplied `Scheduler`.
+   This guards against backpressure exceptions when the scheduler is unable to keep up with the rate
+   at which queries are being triggered.
+ * Fix: Indent the subsequent lines of a multi-line queries when logging.
+
+
 Version 0.6.0 *(2016-02-17)*
 ----------------------------
 
