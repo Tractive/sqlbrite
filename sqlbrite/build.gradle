@@ -1,6 +1,7 @@
 buildscript {
   dependencies {
     classpath rootProject.ext.androidPlugin
+    classpath rootProject.ext.decendentsPlugin
   }
 }
 

@@ -11,7 +11,8 @@ allprojects {
 }
 
 ext {
-  androidPlugin = 'com.android.tools.build:gradle:2.1.0'
+  androidPlugin = 'com.android.tools.build:gradle:2.1.2'
+  decendentsPlugin = 'com.github.dcendents:android-maven-gradle-plugin:1.4'
   compileSdkVersion = 24
   buildToolsVersion = '24.0.0'
 
